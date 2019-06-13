@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityStandardAssets.Characters.FirstPerson;
+using UnityEngine.UI;
 
 public class Player : Photon.PunBehaviour {
 	
@@ -12,6 +13,7 @@ public class Player : Photon.PunBehaviour {
 	private FirstPersonController fpsController;
 	public Transform characterWeapons;
 	public MuzzleFlashController muzzleFlashController;
+    public TextMesh nameTag;
 
 	void Awake() {
 		if(photonView.isMine) {
@@ -19,6 +21,8 @@ public class Player : Photon.PunBehaviour {
 		}
 		syncPos = transform.position;
 		syncRot = transform.rotation;
+		nameTag.gameObject.SetActive(false);
+        photonView.RPC("RPCGetName", PhotonTargets.AllBuffered, PlayerPrefs.GetString("Player_Name"));
 	}
 
 	void Start() {
@@ -26,6 +30,7 @@ public class Player : Photon.PunBehaviour {
 		if (!photonView.isMine) {
 			Destroy(transform.Find("FirstPersonCharacter").gameObject);
 			transform.Find("PlayerCharacter").gameObject.SetActive(true);
+			EnableRagdoll(false);
 			MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
 			foreach(MonoBehaviour script in scripts) {
 				if (script == this || script is PhotonView || script is WeaponADS) {
@@ -35,7 +40,7 @@ public class Player : Photon.PunBehaviour {
 			}
 			return;
 		} else {
-			Destroy(transform.Find("PlayerCharacter").gameObject);
+			transform.Find("PlayerCharacter").gameObject.SetActive(false);
 		}
 		fpsController = GetComponent<FirstPersonController>();
 	}
@@ -44,6 +49,9 @@ public class Player : Photon.PunBehaviour {
 		if(!photonView.isMine) {
 			transform.position = Vector3.Lerp(transform.position, syncPos, 0.1f);
 			transform.rotation = Quaternion.Lerp(transform.rotation, syncRot, 0.1f);
+			if(Camera.main != null) {
+				nameTag.transform.rotation = Camera.main.transform.rotation;
+			}
 			return;
 		}
 		UpdateAnimator();
@@ -52,6 +60,11 @@ public class Player : Photon.PunBehaviour {
 	public void PlaySoundThroughPhoton(string clipName) {
 		photonView.RPC("RPCPlaySoundThroughPhoton", PhotonTargets.Others, clipName);
 	}
+
+	[PunRPC]
+    public void RPCGetName (string name) {
+         nameTag.text = name;
+    }
 
 	[PunRPC]
 	void RPCPlaySoundThroughPhoton(string clipName) {
@@ -123,6 +136,13 @@ public class Player : Photon.PunBehaviour {
 		}
 	}
 
+	[PunRPC]
+	public void RPCDamage(float damage) {
+		if(photonView.isMine) {
+			Player.instance.GetComponent<Health>().DealDamage(damage);
+		}
+	}
+
 	public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) {
 		if(stream.isWriting) {
 			stream.SendNext(transform.position);
@@ -135,5 +155,49 @@ public class Player : Photon.PunBehaviour {
 
 	public void OnPhotonPlayerConnected(PhotonPlayer newPlayer) {
 		SetWeapon(WeaponSwitch.instance.GetCurrentWeapon());
+	}
+
+	public void EnableRagdoll(bool enabled) {
+        Transform character = transform.Find("PlayerCharacter");
+        CharacterJoint[] joints = character.GetComponentsInChildren<CharacterJoint>();
+        Rigidbody[] rigidBodies = character.GetComponentsInChildren<Rigidbody>();
+        Collider[] colliders = character.GetComponentsInChildren<Collider>();
+        foreach(CharacterJoint joint in joints) {
+            joint.enablePreprocessing = enabled;
+            joint.enableProjection = enabled;
+        }
+        foreach(Rigidbody body in rigidBodies) {
+            body.useGravity = enabled;
+            body.isKinematic = !enabled;
+        }
+        foreach(Collider collider in colliders) {
+            collider.enabled = enabled;
+        }
+    }
+
+	[PunRPC]
+	public void RPCKillPlayer() {
+		GameObject PlayerCharacter = transform.Find("PlayerCharacter").gameObject;
+		PlayerCharacter.SetActive(true);
+		characterAnimator.enabled = false;
+		EnableRagdoll(true);
+		PlayerCharacter.transform.SetParent(null);
+		nameTag.transform.SetParent(PlayerCharacter.transform);
+
+		if(photonView.isMine) {
+			PhotonNetwork.Destroy(gameObject);
+			GameObject deathCam = PlayerCharacter.transform.Find("DeathCam").gameObject;
+			deathCam.SetActive(true);
+			DisableUI();
+			PlayerCharacter.GetComponent<Spectator>().enableSpectate(deathCam);
+		}
+	}
+
+	void DisableUI() {
+		Transform canvas = GameObject.Find("/Canvas/InGame").transform;
+		canvas.Find("WeaponPanel").gameObject.SetActive(false);
+		canvas.Find("HealthPanel").gameObject.SetActive(false);
+		canvas.Find("CrossHair").GetComponent<Image>().enabled = false;
+		canvas.Find("RolePanel").gameObject.SetActive(false);
 	}
 }

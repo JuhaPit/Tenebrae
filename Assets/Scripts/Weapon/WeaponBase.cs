@@ -47,10 +47,9 @@ public class WeaponBase : MonoBehaviour {
 	// Use this for initialization
 
 	void Awake() {
-		Transform inGameUITransform = GameObject.Find("/Canvas/InGame").transform;
-		weaponName = inGameUITransform.Find("WeaponName").GetComponent<Text>();
-		ammo = inGameUITransform.Find("Ammo").GetComponent<Text>();
-		crossHair = inGameUITransform.Find("CrossHair");
+		weaponName = GameObject.Find("WeaponName").GetComponent<Text>();
+		ammo = GameObject.Find("Ammo").GetComponent<Text>();
+		crossHair = GameObject.Find("CrossHair").transform;
 	}
 
 	void Start () {
@@ -65,7 +64,7 @@ public class WeaponBase : MonoBehaviour {
 
 	public void UpdateTexts() {
 		weaponName.text = displayedName;
-		ammo.text = "Ammo: " + bulletsInMag + " / " + ammoLeft;
+		ammo.text = bulletsInMag + " / " + ammoLeft;
 	}
 	
 	// Update is called once per frame
@@ -130,7 +129,14 @@ public class WeaponBase : MonoBehaviour {
 	void HitScan() {
 		RaycastHit hit;
 		if (Physics.Raycast(rayCastPoint.position, CalculateSpread(accuracy, rayCastPoint), out hit)) {
-			string effect = hit.transform.CompareTag("Player") ? bloodPrefabName : impactPrefabName;
+			string effect;
+			if (hit.transform.CompareTag("Player")) {
+				effect = bloodPrefabName;
+				PhotonView photonPlayer = hit.transform.GetComponent<PhotonView>();
+				photonPlayer.RPC("RPCDamage", PhotonTargets.AllBuffered, damage);
+			} else {
+				effect = impactPrefabName;
+			}
 			GameObject impact = PhotonNetwork.Instantiate(effect, hit.point, Quaternion.FromToRotation(Vector3.forward, hit.normal), 0);
 			DestroyAfterTime(impact, 1f);
 		}

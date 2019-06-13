@@ -47,4 +47,8 @@ MonoBehaviour:
   - RPCSetWeapon
   - RPCPlaySoundThroughPhoton
   - RPCPlayMuzzleFlashThroughPhoton
+  - getName
+  - RPCGetName
+  - RPCDamage
+  - RPCKillPlayer
   DisableAutoOpenWizard: 1
