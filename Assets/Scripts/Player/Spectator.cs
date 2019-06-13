@@ -9,6 +9,7 @@ public class Spectator : MonoBehaviour {
 	GameObject[] players;
 	int playerIndex = -1;
 	GameObject spectatedCamera;
+
 	GameObject deathPanel;
 	GameObject spectatorPanel;
 
@@ -54,11 +55,6 @@ public class Spectator : MonoBehaviour {
 	}
 
 	string GetPlayerName(GameObject player) {
-		TextMesh nameFromPlayer = player.GetComponent<TextMesh>();
-		if(nameFromPlayer != null) {
-			return nameFromPlayer.text;
-		} else {
-			return "test";
-		}
+		return player.transform.Find("NameTag").GetComponent<TextMesh>().text;
 	}
 }

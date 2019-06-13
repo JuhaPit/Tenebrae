@@ -22,6 +22,7 @@ public class Player : Photon.PunBehaviour {
 		syncPos = transform.position;
 		syncRot = transform.rotation;
 		nameTag.gameObject.SetActive(false);
+		nameTag.text = PlayerPrefs.GetString("Player_Name");
         photonView.RPC("RPCGetName", PhotonTargets.AllBuffered, PlayerPrefs.GetString("Player_Name"));
 	}
 
@@ -63,7 +64,9 @@ public class Player : Photon.PunBehaviour {
 
 	[PunRPC]
     public void RPCGetName (string name) {
-         nameTag.text = name;
+		if(!photonView.isMine) {
+        	nameTag.text = name;
+		}
     }
 
 	[PunRPC]
@@ -182,7 +185,6 @@ public class Player : Photon.PunBehaviour {
 		characterAnimator.enabled = false;
 		EnableRagdoll(true);
 		PlayerCharacter.transform.SetParent(null);
-		nameTag.transform.SetParent(PlayerCharacter.transform);
 
 		if(photonView.isMine) {
 			PhotonNetwork.Destroy(gameObject);
