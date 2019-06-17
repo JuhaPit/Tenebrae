@@ -185,7 +185,6 @@ public class Player : Photon.PunBehaviour {
 		characterAnimator.enabled = false;
 		EnableRagdoll(true);
 		PlayerCharacter.transform.SetParent(null);
-
 		if(photonView.isMine) {
 			PhotonNetwork.Destroy(gameObject);
 			GameObject deathCam = PlayerCharacter.transform.Find("DeathCam").gameObject;
@@ -193,6 +192,7 @@ public class Player : Photon.PunBehaviour {
 			DisableUI();
 			PlayerCharacter.GetComponent<Spectator>().enableSpectate(deathCam);
 		}
+		nameTag.gameObject.SetActive(false);
 	}
 
 	void DisableUI() {
