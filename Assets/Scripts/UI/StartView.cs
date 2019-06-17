@@ -23,9 +23,9 @@ public class StartView : ViewBase {
 			PlayerPrefs.SetString("Player_Name", nameField.text);
 			NetworkManager.instance.Connect(
 				() => {
-					mainUI.SetActive(false);
 					NetworkManager.instance.JoinOrCreateRoom(
 						() => {
+							mainUI.SetActive(false);
 							lobbyCamera.SetActive(false);
 							inGameUI.SetActive(true);
 							GameManager.instance.StartGame();
