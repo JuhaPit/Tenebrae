@@ -137,6 +137,7 @@ public class WeaponBase : MonoBehaviour {
 			} else {
 				effect = impactPrefabName;
 			}
+			Debug.Log(hit.transform.name);
 			GameObject impact = PhotonNetwork.Instantiate(effect, hit.point, Quaternion.FromToRotation(Vector3.forward, hit.normal), 0);
 			DestroyAfterTime(impact, 1f);
 		}
